@@ -16,13 +16,6 @@ nltk.download('stopwords')
 model = WhisperModel("large-v2")
 
 
-def save_text_to_word(text, file_path):
-    """Сохраняет текст в файл формата Word (DOCX)."""
-    doc = Document()
-    doc.add_paragraph(text)
-    doc.save(file_path)
-
-
 def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
     # Распознаём аудио-файл
     if t_audio != "" and not (t_audio is None):
@@ -119,6 +112,12 @@ def process_summarize(sIn):
     return "\n".join(str(sentence) for sentence in summarized_text)
     return 'Необходимо заполнить поле стенограмма'
 
+def save_and_download_text(text):
+    filename = "downloaded_text.txt"  # Название файла, который будет скачан
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(text)
+    return filename  # Возвращаем имя файла
+
 
 with gr.Blocks() as demo:
     with gr.Column(scale=2):
@@ -131,13 +130,16 @@ with gr.Blocks() as demo:
         t_stenogr = gr.Text("", label="Стенограмма:")
         btn_summarize = gr.Button(value="Суммаризировать стенограмму")
         t_summarize = gr.Text("", label="Суммаризация:")
+        download_button = gr.DownloadButton(label="Скачать файл стенограммы")
+        download_btn = gr.DownloadButton(label="Скачать файл краткого содержания стенограммы")
+
 
         btn.click(process_video, inputs=[t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio], outputs=[t_stenogr])
         btn_summarize.click(process_summarize, inputs=[t_stenogr], outputs=[t_summarize])
 
         # Кнопка для сохранения транскрибированного текста в Word
-        btn_save_to_word = gr.Button(value="Сохранить в Word")
-        btn_save_to_word.click(lambda text: save_text_to_word(text, "transcribed_text.docx"), inputs=[t_stenogr])
+        download_button.click(save_and_download_text, inputs=[t_stenogr], outputs=[download_button])
+        download_btn.click(save_and_download_text, inputs=[t_summarize], outputs=[download_btn])
 
 
 demo.launch(share=True)
