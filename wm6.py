@@ -80,7 +80,6 @@ def GetSubtitres(first_language_code, yt):
     else:
         return "Указанный код языка не найден. Возможо выбрать указанные ниже языки:" + '\n' + sLang
 
-
 # получаем аудио с Ютьюб
 def GetTextFromVideoYt(yt):
     try:
@@ -92,12 +91,10 @@ def GetTextFromVideoYt(yt):
     audio_file = mp.AudioFileClip(fileName)
     audio_file.write_audiofile("vrem.wav")
 
-
     segments, info = model.transcribe("vrem.wav")
     sText = ''
     for segment in segments:
         sText += segment.text
-    sText = ''.join(transcription) 
     os.remove(fileName)
     os.remove("vrem.wav")
 
