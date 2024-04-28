@@ -1,51 +1,59 @@
-import gradio as gr
 import os
+import streamlit as st
 import moviepy.editor as mp
 from faster_whisper import WhisperModel
+from pydub import AudioSegment
 from pytube import YouTube
+from pytube.exceptions import AgeRestrictedError
 from youtube_transcript_api import YouTubeTranscriptApi
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
+from yake import KeywordExtractor
+from functools import lru_cache
 
 import nltk
 nltk.download('punkt')
 nltk.download('stopwords')
 
 # Загружаем модель Whisper
-model = WhisperModel("large-v2")
+model = WhisperModel("small")
 
 
+@lru_cache(maxsize=None)
 def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
-    # Распознаём аудио-файл
-    if t_audio != "" and not (t_audio is None):
-        return GetTextFromVideoAudio(t_audio)
-    # Распознаём видео-файл
-    if t_video != "" and not (t_video is None):
-        return GetTextFromVideoAudio(t_video)
-
+    if subtitres_whisper == 'Распознать загруженное аудио/видео':
+        # Распознаём аудио-файл
+        if t_audio != "" and not (t_audio is None):
+            return GetTextFromVideoAudio(t_audio)
+        # Распознаём видео-файл
+        if t_video != "" and not (t_video is None):
+            return GetTextFromVideoAudio(t_video)
 
     # Извлекаем видео ID из URL
-    if 'v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?':
+    if ('v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?') or ('shorts/' in sURL and sURL[:len('https://www.youtube.com/shorts/')] == 'https://www.youtube.com/shorts/'):
         # Получаем информацию о видео
         yt = YouTube(sURL)
-        if subtitres_whisper == 'Субтитры':
+        if subtitres_whisper == 'Использовать субтитры YouTube':
             # Извлекаем субтитры
             return GetSubtitres(subtitres_lang, yt)
 
-        if subtitres_whisper == 'Распознать аудио':
+        if subtitres_whisper == 'Распознать аудио с YouTube':
             # Анализ аудио
             return GetTextFromVideoYt(yt)
-
+        
     return "Укажите параметры работы с видео материалом."
-
 
 # получаем субтитры с Ютьб
 def GetSubtitres(first_language_code, yt):
 
     sLang = 'Базовые языки:' + '\n'
     bFind = False
-    transcript_list = YouTubeTranscriptApi.list_transcripts(yt.video_id)
+    try:
+        transcript_list = YouTubeTranscriptApi.list_transcripts(yt.video_id)
+    except:
+        return "Не удалось получить субтитры из видео. \nПопробуйте выбрать другие параметры работы с видео. \nНапример: Распознать аудио с YouTube"
+
     for transcript in transcript_list:
         sLang += '   - ' + transcript.language_code + ' - ' + transcript.language + '\n'
         if transcript.language_code == first_language_code:
@@ -72,10 +80,14 @@ def GetSubtitres(first_language_code, yt):
     else:
         return "Указанный код языка не найден. Возможо выбрать указанные ниже языки:" + '\n' + sLang
 
-
 # получаем аудио с Ютьюб
 def GetTextFromVideoYt(yt):
-    fileName = yt.streams.filter(type="audio").first().download()
+    try:
+        fileName = yt.streams.filter(type="audio").first().download()
+    except AgeRestrictedError as e:
+        return "Видео имеет возрастные ограничения, и к нему невозможно получить доступ без входа в систему.. \nПопробуйте выбрать другие параметры работы с видео. \nНапример: Распознать загруженное аудио/видео"
+    except:
+        return "Не удалось получить аудио из видео." 
     audio_file = mp.AudioFileClip(fileName)
     audio_file.write_audiofile("vrem.wav")
 
@@ -87,61 +99,102 @@ def GetTextFromVideoYt(yt):
     os.remove("vrem.wav")
 
     return sText
-
 
 # Работа с аудио/видео на локальном диске
 def GetTextFromVideoAudio(fileName):
-    audio_file = mp.AudioFileClip(fileName)
-    audio_file.write_audiofile("vrem.wav")
-    segments, info = model.transcribe("vrem.wav")
+    segments, info = model.transcribe(fileName)
     sText = ''
     for segment in segments:
         sText += segment.text
 
-    os.remove(fileName)
-    os.remove("vrem.wav")
-
     return sText
 
-
+@lru_cache(maxsize=None)
 def process_summarize(sIn):
-    if sIn != "" and not (sIn is None):
+    if sIn != "" and not (sIn is None) and sIn != "...":
         summarizer = LsaSummarizer()
         parser = PlaintextParser.from_string(sIn, Tokenizer("russian"))
         summarized_text = summarizer(parser.document, sentences_count=10)  # Меняем число предложений
-    return "\n".join(str(sentence) for sentence in summarized_text)
-    return 'Необходимо заполнить поле стенограмма'
+        return "\n".join(str(sentence) for sentence in summarized_text)
+    else:
+        return 'Необходимо заполнить поле субтитров'
 
-def save_and_download_text(text):
-    filename = "downloaded_text.txt"  # Название файла, который будет скачан
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(text)
-    return filename  # Возвращаем имя файла
+@lru_cache(maxsize=None)
+def Keyword_1(sIn):
+    if sIn != "" and not (sIn is None) and sIn != "...":
+        extractor = KeywordExtractor(lan="ru", n=3, top=30, features=None)
+        keywords = extractor.extract_keywords(sIn)
+        # Изменяем способ объединения ключевых слов, используя ';' в качестве разделителя
+        return '; '.join([word[0] for word in keywords]).capitalize()
+    else:
+        return 'Необходимо заполнить поле субтитров'
+    
 
+if __name__ == '__main__':
 
-with gr.Blocks() as demo:
-    with gr.Column(scale=2):
-        t_subtitres_whisper = gr.Radio(["Субтитры", "Распознать аудио"], label="Вариант исполнения на YouTube:")
-        t_sURL = gr.Text("https://www.youtube.com/watch?v=6EsCI3CbmTk", label="YouTube - ссылка на страницу с видео")
-        t_subtitres_lang = gr.Text("ru", label="Язык субтитров (основной либо перевод (указывается код): ru, en ...)")
-        t_video = gr.Video(sources=['upload'])
-        t_audio = gr.Audio(type='filepath', sources=['upload'])
-        btn = gr.Button(value="Сформировать стенограмму")
-        t_stenogr = gr.Text("", label="Стенограмма:")
-        btn_summarize = gr.Button(value="Суммаризировать стенограмму")
-        t_summarize = gr.Text("", label="Суммаризация:")
-        download_button = gr.DownloadButton(label="Скачать файл стенограммы")
-        download_btn = gr.DownloadButton(label="Скачать файл краткого содержания стенограммы")
+    st.header('Транскрибация и суммаризация')
+    st.subheader('Приложение, которое позволяет получить краткий отчет из '
+            'контента на YouTube или локальных файлов. :tv: :arrow_forward: :memo:')
 
+    t_sURL = st.text_input(
+            "Введите ссылку на видео из YouTube",
+            "https://www.youtube.com/watch?v=6EsCI3CbmTk", 
+            on_change=st.session_state.clear)
 
-        btn.click(process_video, inputs=[t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio], outputs=[t_stenogr])
-        btn_summarize.click(process_summarize, inputs=[t_stenogr], outputs=[t_summarize])
+    t_subtitres_whisper = st.radio(
+            "Выберите способ получения текста из YouTube",
+            ["Использовать субтитры YouTube", "Распознать аудио с YouTube", "Распознать загруженное аудио/видео"], 
+            on_change=st.session_state.clear)
 
-        # Кнопка для сохранения транскрибированного текста в Word
-        download_button.click(save_and_download_text, inputs=[t_stenogr], outputs=[download_button])
-        download_btn.click(save_and_download_text, inputs=[t_summarize], outputs=[download_btn])
+    t_subtitres_lang = st.selectbox(
+        'Язык субтитров',
+        ('RU', 'EN')).lower()
+    
 
+    t_video = st.file_uploader("Выберете видео файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
+    t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
 
-demo.launch(share=True)
+    def click_button0():
+        st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio)
 
+    text_label0 = 'Субтитры из видео/аудио'
+    button_name0 = 'Получить субтитры'
+    if 'result0' not in st.session_state:
+        st.session_state['result0'] = '...'
+    st.text_area(text_label0, st.session_state['result0'], key='0')
+    col1, col2, col3 = st.columns([4, 1.6, 0.6])
+    with col2:
+        st.button(button_name0, on_click=click_button0, key='00')
+    with col3:
+        st.download_button(label=":inbox_tray:", data=st.session_state['result0'], mime="text/plain", key='000', file_name=f"{button_name0[9:].capitalize()}.txt")
+
+    def click_button1():
+        if 'result0' in st.session_state:
+            st.session_state['result1'] = process_summarize(st.session_state['result0'])
+
+    text_label1 = 'Краткий отчет'
+    button_name1 = 'Получить краткий отчет'
+    if 'result1' not in st.session_state:
+        st.session_state['result1'] = '...'
+    st.text_area(text_label1, st.session_state['result1'], key='1')
+    col1, col2, col3 = st.columns([4, 2.0, 0.6])
+    with col2:
+        st.button(button_name1, on_click=click_button1, key='11')
+    with col3:
+        st.download_button(label=":inbox_tray:", data=st.session_state['result1'], mime="text/plain", key='111', file_name=f"{button_name1[9:].capitalize()}.txt")
+
+    def click_button2():
+        if 'result0' in st.session_state:
+            st.session_state['result2'] =Keyword_1(st.session_state['result0'])
+
+    text_label2 = 'Ключевые слова'
+    button_name2 = 'Получить ключевые слова'
+    if 'result2' not in st.session_state:
+        st.session_state['result2'] = '...'
+    st.text_area(text_label2, st.session_state['result2'], key='2')
+    col1, col2, col3 = st.columns([4, 2.2, 0.6])
+    with col2:
+        st.button(button_name2, on_click=click_button2, key='22')
+    with col3:
+        st.download_button(label=":inbox_tray:", data=st.session_state['result0'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
 
