@@ -2,7 +2,6 @@ import os
 import streamlit as st
 import moviepy.editor as mp
 from faster_whisper import WhisperModel
-from pydub import AudioSegment
 from pytube import YouTube
 from pytube.exceptions import AgeRestrictedError
 from youtube_transcript_api import YouTubeTranscriptApi
@@ -122,7 +121,7 @@ def process_summarize(sIn):
 @lru_cache(maxsize=None)
 def Keyword_1(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
-        extractor = KeywordExtractor(lan="ru", n=3, top=30, features=None)
+        extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
         keywords = extractor.extract_keywords(sIn)
         # Изменяем способ объединения ключевых слов, используя ';' в качестве разделителя
         return '; '.join([word[0] for word in keywords]).capitalize()
@@ -156,6 +155,7 @@ if __name__ == '__main__':
 
     def click_button0():
         st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio)
+
 
     text_label0 = 'Субтитры из видео/аудио'
     button_name0 = 'Получить субтитры'
@@ -196,5 +196,5 @@ if __name__ == '__main__':
     with col2:
         st.button(button_name2, on_click=click_button2, key='22')
     with col3:
-        st.download_button(label=":inbox_tray:", data=st.session_state['result0'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
+        st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
 
