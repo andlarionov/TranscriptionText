@@ -124,3 +124,18 @@ if __name__ == '__main__':
         'Язык субтитров',
         ('RU', 'EN')).lower()
 
+
+
+    def click_button0():
+        st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, "", "")
+
+
+    text_label0 = 'Субтитры из видео/аудио'
+    button_name0 = 'Получить субтитры'
+    if 'result0' not in st.session_state:
+        st.session_state['result0'] = '...'
+    st.text_area(text_label0, st.session_state['result0'], key='0')
+    col1, col2 = st.columns([4, 1])
+    with col2:
+        st.button(button_name0, on_click=click_button0, key='00')
+
