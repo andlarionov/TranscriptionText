@@ -9,9 +9,9 @@ from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
 from yake import KeywordExtractor
+from functools import lru_cache
 
 import nltk
-
 nltk.download('punkt')
 nltk.download('stopwords')
 
@@ -19,6 +19,7 @@ nltk.download('stopwords')
 model = WhisperModel("small")
 
 
+@lru_cache(maxsize=None)
 def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
     if subtitres_whisper == 'Распознать загруженное аудио/видео':
         # Распознаём аудио-файл
@@ -29,8 +30,7 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
             return GetTextFromVideoAudio(t_video)
 
     # Извлекаем видео ID из URL
-    if ('v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?') or (
-            'shorts/' in sURL and sURL[:len('https://www.youtube.com/shorts/')] == 'https://www.youtube.com/shorts/'):
+    if ('v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?') or ('shorts/' in sURL and sURL[:len('https://www.youtube.com/shorts/')] == 'https://www.youtube.com/shorts/'):
         # Получаем информацию о видео
         yt = YouTube(sURL)
         if subtitres_whisper == 'Использовать субтитры YouTube':
@@ -40,12 +40,12 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
         if subtitres_whisper == 'Распознать аудио с YouTube':
             # Анализ аудио
             return GetTextFromVideoYt(yt)
-
+        
     return "Укажите параметры работы с видео материалом."
-
 
 # получаем субтитры с Ютьб
 def GetSubtitres(first_language_code, yt):
+
     sLang = 'Базовые языки:' + '\n'
     bFind = False
     try:
@@ -79,7 +79,6 @@ def GetSubtitres(first_language_code, yt):
     else:
         return "Указанный код языка не найден. Возможо выбрать указанные ниже языки:" + '\n' + sLang
 
-
 # получаем аудио с Ютьюб
 def GetTextFromVideoYt(yt):
     try:
@@ -87,7 +86,7 @@ def GetTextFromVideoYt(yt):
     except AgeRestrictedError as e:
         return "Видео имеет возрастные ограничения, и к нему невозможно получить доступ без входа в систему.. \nПопробуйте выбрать другие параметры работы с видео. \nНапример: Распознать загруженное аудио/видео"
     except:
-        return "Не удалось получить аудио из видео."
+        return "Не удалось получить аудио из видео." 
     audio_file = mp.AudioFileClip(fileName)
     audio_file.write_audiofile("vrem.wav")
 
@@ -100,7 +99,6 @@ def GetTextFromVideoYt(yt):
 
     return sText
 
-
 # Работа с аудио/видео на локальном диске
 def GetTextFromVideoAudio(fileName):
     segments, info = model.transcribe(fileName)
@@ -110,7 +108,7 @@ def GetTextFromVideoAudio(fileName):
 
     return sText
 
-
+@lru_cache(maxsize=None)
 def process_summarize(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
         summarizer = LsaSummarizer()
@@ -120,42 +118,40 @@ def process_summarize(sIn):
     else:
         return 'Необходимо заполнить поле субтитров'
 
-
-def Keyword_1(sIn): # Функция Keyword_1 принимает строку 'sIn' в качестве аргумента
-    if sIn != "" and not (sIn is None) and sIn != "...": 
-        extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)  # Создаем объект extractor класса KeywordExtractor с параметрами
-        keywords = extractor.extract_keywords(sIn)  # Извлекаем ключевые слова из строки 'sIn'
+@lru_cache(maxsize=None)
+def Keyword_1(sIn):
+    if sIn != "" and not (sIn is None) and sIn != "...":
+        extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
+        keywords = extractor.extract_keywords(sIn)
         # Изменяем способ объединения ключевых слов, используя ';' в качестве разделителя
-        return '; '.join([word[0] for word in keywords]).capitalize()  # Объединяем ключевые слова с использованием ';' в качестве разделителя и делаем первую букву каждого слова заглавной
-    else: # Возвращаем сообщение, если строка 'sIn' пустая, равна None или содержит '...'
+        return '; '.join([word[0] for word in keywords]).capitalize()
+    else:
         return 'Необходимо заполнить поле субтитров'
-
+    
 
 if __name__ == '__main__':
 
     st.header('Транскрибация и суммаризация')
     st.subheader('Приложение, которое позволяет получить краткий отчет из '
-                 'контента на YouTube или локальных файлов. :tv: :arrow_forward: :memo:')
+            'контента на YouTube или локальных файлов. :tv: :arrow_forward: :memo:')
 
     t_sURL = st.text_input(
-        "Введите ссылку на видео из YouTube",
-        "https://www.youtube.com/watch?v=6EsCI3CbmTk",
-        on_change=st.session_state.clear)
+            "Введите ссылку на видео из YouTube",
+            "https://www.youtube.com/watch?v=6EsCI3CbmTk", 
+            on_change=st.session_state.clear)
 
     t_subtitres_whisper = st.radio(
-        "Выберите способ получения текста из YouTube",
-        ["Использовать субтитры YouTube", "Распознать аудио с YouTube", "Распознать загруженное аудио/видео"],
-        on_change=st.session_state.clear)
+            "Выберите способ получения текста из YouTube",
+            ["Использовать субтитры YouTube", "Распознать аудио с YouTube", "Распознать загруженное аудио/видео"], 
+            on_change=st.session_state.clear)
 
     t_subtitres_lang = st.selectbox(
         'Язык субтитров',
         ('RU', 'EN')).lower()
+    
 
-    t_video = st.file_uploader("Выберете видео файл для распознавания", accept_multiple_files=False,
-                               on_change=st.session_state.clear)
-    t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False,
-                               on_change=st.session_state.clear)
-
+    t_video = st.file_uploader("Выберете видео файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
+    t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
 
     def click_button0():
         st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio)
@@ -166,36 +162,39 @@ if __name__ == '__main__':
     if 'result0' not in st.session_state:
         st.session_state['result0'] = '...'
     st.text_area(text_label0, st.session_state['result0'], key='0')
-    col1, col2 = st.columns([4, 1])
+    col1, col2, col3 = st.columns([4, 1.6, 0.6])
     with col2:
         st.button(button_name0, on_click=click_button0, key='00')
-
+    with col3:
+        st.download_button(label=":inbox_tray:", data=st.session_state['result0'], mime="text/plain", key='000', file_name=f"{button_name0[9:].capitalize()}.txt")
 
     def click_button1():
         if 'result0' in st.session_state:
             st.session_state['result1'] = process_summarize(st.session_state['result0'])
-
 
     text_label1 = 'Краткий отчет'
     button_name1 = 'Получить краткий отчет'
     if 'result1' not in st.session_state:
         st.session_state['result1'] = '...'
     st.text_area(text_label1, st.session_state['result1'], key='1')
-    col1, col2 = st.columns([4, 1])
+    col1, col2, col3 = st.columns([4, 2.0, 0.6])
     with col2:
         st.button(button_name1, on_click=click_button1, key='11')
+    with col3:
+        st.download_button(label=":inbox_tray:", data=st.session_state['result1'], mime="text/plain", key='111', file_name=f"{button_name1[9:].capitalize()}.txt")
 
     def click_button2():
         if 'result0' in st.session_state:
             st.session_state['result2'] =Keyword_1(st.session_state['result0'])
 
-    text_label2 = 'Ключевые слова' 
-    button_name2 = 'Получить ключевые слова' # Устанавливаем название кнопки для получения ключевых слов
-    if 'result2' not in st.session_state: # Проверяем наличие 'result2' в состоянии сессии, если нет, устанавливаем значение по умолчанию '...'
+    text_label2 = 'Ключевые слова'
+    button_name2 = 'Получить ключевые слова'
+    if 'result2' not in st.session_state:
         st.session_state['result2'] = '...'
-    st.text_area(text_label2, st.session_state['result2'], key='2') # Отображаем текстовую область с 'result2' и меткой 'Ключевые слова'
-    col1, col2, col3 = st.columns([4, 2.2, 0.6]) # Разбиваем экран на три колонки с соответствующими размерностями
-    with col2: # Во второй колонке размещаем кнопку с названием 'button_name2', при нажатии на которую вызывается функция 'click_button2'
+    st.text_area(text_label2, st.session_state['result2'], key='2')
+    col1, col2, col3 = st.columns([4, 2.2, 0.6])
+    with col2:
         st.button(button_name2, on_click=click_button2, key='22')
-    with col3: # В третьей колонке размещаем кнопку для скачивания данных из 'result2' в виде файла с расширением '.txt'
+    with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
+
