@@ -5,16 +5,18 @@ from faster_whisper import WhisperModel
 from pytube import YouTube
 from pytube.exceptions import AgeRestrictedError
 from youtube_transcript_api import YouTubeTranscriptApi
-
-
+from sumy.parsers.plaintext import PlaintextParser
+from sumy.nlp.tokenizers import Tokenizer
+from sumy.summarizers.lsa import LsaSummarizer
+from yake import KeywordExtractor
 
 import nltk
+
 nltk.download('punkt')
 nltk.download('stopwords')
 
 # Загружаем модель Whisper
 model = WhisperModel("small")
-
 
 
 def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
@@ -27,7 +29,8 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
             return GetTextFromVideoAudio(t_video)
 
     # Извлекаем видео ID из URL
-    if ('v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?') or ('shorts/' in sURL and sURL[:len('https://www.youtube.com/shorts/')] == 'https://www.youtube.com/shorts/'):
+    if ('v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?') or (
+            'shorts/' in sURL and sURL[:len('https://www.youtube.com/shorts/')] == 'https://www.youtube.com/shorts/'):
         # Получаем информацию о видео
         yt = YouTube(sURL)
         if subtitres_whisper == 'Использовать субтитры YouTube':
@@ -37,12 +40,12 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
         if subtitres_whisper == 'Распознать аудио с YouTube':
             # Анализ аудио
             return GetTextFromVideoYt(yt)
-        
+
     return "Укажите параметры работы с видео материалом."
+
 
 # получаем субтитры с Ютьб
 def GetSubtitres(first_language_code, yt):
-
     sLang = 'Базовые языки:' + '\n'
     bFind = False
     try:
@@ -76,6 +79,7 @@ def GetSubtitres(first_language_code, yt):
     else:
         return "Указанный код языка не найден. Возможо выбрать указанные ниже языки:" + '\n' + sLang
 
+
 # получаем аудио с Ютьюб
 def GetTextFromVideoYt(yt):
     try:
@@ -83,7 +87,7 @@ def GetTextFromVideoYt(yt):
     except AgeRestrictedError as e:
         return "Видео имеет возрастные ограничения, и к нему невозможно получить доступ без входа в систему.. \nПопробуйте выбрать другие параметры работы с видео. \nНапример: Распознать загруженное аудио/видео"
     except:
-        return "Не удалось получить аудио из видео." 
+        return "Не удалось получить аудио из видео."
     audio_file = mp.AudioFileClip(fileName)
     audio_file.write_audiofile("vrem.wav")
 
@@ -96,6 +100,7 @@ def GetTextFromVideoYt(yt):
 
     return sText
 
+
 # Работа с аудио/видео на локальном диске
 def GetTextFromVideoAudio(fileName):
     segments, info = model.transcribe(fileName)
@@ -104,6 +109,17 @@ def GetTextFromVideoAudio(fileName):
         sText += segment.text
 
     return sText
+
+
+def process_summarize(sIn):
+    if sIn != "" and not (sIn is None) and sIn != "...":
+        summarizer = LsaSummarizer()
+        parser = PlaintextParser.from_string(sIn, Tokenizer("russian"))
+        summarized_text = summarizer(parser.document, sentences_count=10)  # Меняем число предложений
+        return "\n".join(str(sentence) for sentence in summarized_text)
+    else:
+        return 'Необходимо заполнить поле субтитров'
+
 
 # Функция Keyword_1 принимает строку 'sIn' в качестве аргумента    
 def Keyword_1(sIn):
@@ -123,25 +139,27 @@ if __name__ == '__main__':
 
     st.header('Транскрибация и суммаризация')
     st.subheader('Приложение, которое позволяет получить краткий отчет из '
-            'контента на YouTube или локальных файлов. :tv: :arrow_forward: :memo:')
+                 'контента на YouTube или локальных файлов. :tv: :arrow_forward: :memo:')
 
     t_sURL = st.text_input(
-            "Введите ссылку на видео из YouTube",
-            "https://www.youtube.com/watch?v=6EsCI3CbmTk", 
-            on_change=st.session_state.clear)
+        "Введите ссылку на видео из YouTube",
+        "https://www.youtube.com/watch?v=6EsCI3CbmTk",
+        on_change=st.session_state.clear)
 
     t_subtitres_whisper = st.radio(
-            "Выберите способ получения текста из YouTube",
-            ["Использовать субтитры YouTube", "Распознать аудио с YouTube", "Распознать загруженное аудио/видео"], 
-            on_change=st.session_state.clear)
+        "Выберите способ получения текста из YouTube",
+        ["Использовать субтитры YouTube", "Распознать аудио с YouTube", "Распознать загруженное аудио/видео"],
+        on_change=st.session_state.clear)
 
     t_subtitres_lang = st.selectbox(
         'Язык субтитров',
         ('RU', 'EN')).lower()
-    
 
-    t_video = st.file_uploader("Выберете видео файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
-    t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
+    t_video = st.file_uploader("Выберете видео файл для распознавания", accept_multiple_files=False,
+                               on_change=st.session_state.clear)
+    t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False,
+                               on_change=st.session_state.clear)
+
 
     def click_button0():
         st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio)
@@ -155,6 +173,12 @@ if __name__ == '__main__':
     col1, col2 = st.columns([4, 1])
     with col2:
         st.button(button_name0, on_click=click_button0, key='00')
+
+
+    def click_button1():
+        if 'result0' in st.session_state:
+            st.session_state['result1'] = process_summarize(st.session_state['result0'])
+
 
     # Устанавливаем текстовую метку для вывода ключевых слов
     text_label2 = 'Ключевые слова'
@@ -173,4 +197,3 @@ if __name__ == '__main__':
     # В третьей колонке размещаем кнопку для скачивания данных из 'result2' в виде файла с расширением '.txt'
     with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
-
