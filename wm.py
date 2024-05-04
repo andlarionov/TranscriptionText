@@ -189,13 +189,13 @@ if __name__ == '__main__':
         if 'result0' in st.session_state:
             st.session_state['result2'] =Keyword_1(st.session_state['result0'])
 
-    text_label2 = 'Ключевые слова'
-    button_name2 = 'Получить ключевые слова'
-    if 'result2' not in st.session_state:
+    text_label2 = 'Ключевые слова' 
+    button_name2 = 'Получить ключевые слова' # Устанавливаем название кнопки для получения ключевых слов
+    if 'result2' not in st.session_state: # Проверяем наличие 'result2' в состоянии сессии, если нет, устанавливаем значение по умолчанию '...'
         st.session_state['result2'] = '...'
-    st.text_area(text_label2, st.session_state['result2'], key='2')
-    col1, col2, col3 = st.columns([4, 2.2, 0.6])
-    with col2:
+    st.text_area(text_label2, st.session_state['result2'], key='2') # Отображаем текстовую область с 'result2' и меткой 'Ключевые слова'
+    col1, col2, col3 = st.columns([4, 2.2, 0.6]) # Разбиваем экран на три колонки с соответствующими размерностями
+    with col2: # Во второй колонке размещаем кнопку с названием 'button_name2', при нажатии на которую вызывается функция 'click_button2'
         st.button(button_name2, on_click=click_button2, key='22')
-    with col3:
+    with col3: # В третьей колонке размещаем кнопку для скачивания данных из 'result2' в виде файла с расширением '.txt'
         st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
