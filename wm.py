@@ -8,6 +8,7 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
+from yake import KeywordExtractor
 
 import nltk
 
@@ -120,6 +121,16 @@ def process_summarize(sIn):
         return 'Необходимо заполнить поле субтитров'
 
 
+def Keyword_1(sIn):
+    if sIn != "" and not (sIn is None) and sIn != "...":
+        extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
+        keywords = extractor.extract_keywords(sIn)
+        # Изменяем способ объединения ключевых слов, используя ';' в качестве разделителя
+        return '; '.join([word[0] for word in keywords]).capitalize()
+    else:
+        return 'Необходимо заполнить поле субтитров'
+
+
 if __name__ == '__main__':
 
     st.header('Транскрибация и суммаризация')
@@ -158,4 +169,20 @@ if __name__ == '__main__':
     col1, col2 = st.columns([4, 1])
     with col2:
         st.button(button_name0, on_click=click_button0, key='00')
+
+
+    def click_button1():
+        if 'result0' in st.session_state:
+            st.session_state['result1'] = process_summarize(st.session_state['result0'])
+
+
+    text_label1 = 'Краткий отчет'
+    button_name1 = 'Получить краткий отчет'
+    if 'result1' not in st.session_state:
+        st.session_state['result1'] = '...'
+    st.text_area(text_label1, st.session_state['result1'], key='1')
+    col1, col2 = st.columns([4, 1])
+    with col2:
+        st.button(button_name1, on_click=click_button1, key='11')
+
 
