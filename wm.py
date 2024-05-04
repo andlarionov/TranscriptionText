@@ -185,4 +185,17 @@ if __name__ == '__main__':
     with col2:
         st.button(button_name1, on_click=click_button1, key='11')
 
+    def click_button2():
+        if 'result0' in st.session_state:
+            st.session_state['result2'] =Keyword_1(st.session_state['result0'])
 
+    text_label2 = 'Ключевые слова'
+    button_name2 = 'Получить ключевые слова'
+    if 'result2' not in st.session_state:
+        st.session_state['result2'] = '...'
+    st.text_area(text_label2, st.session_state['result2'], key='2')
+    col1, col2, col3 = st.columns([4, 2.2, 0.6])
+    with col2:
+        st.button(button_name2, on_click=click_button2, key='22')
+    with col3:
+        st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
