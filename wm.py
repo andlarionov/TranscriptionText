@@ -104,14 +104,18 @@ def GetTextFromVideoAudio(fileName):
         sText += segment.text
 
     return sText
-    
+
+# Функция Keyword_1 принимает строку 'sIn' в качестве аргумента    
 def Keyword_1(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
+         # Создаем объект extractor класса KeywordExtractor с параметрами
         extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
+         # Извлекаем ключевые слова из строки 'sIn'
         keywords = extractor.extract_keywords(sIn)
-        # Изменяем способ объединения ключевых слов, используя ';' в качестве разделителя
+        # Объединяем ключевые слова с использованием ';' в качестве разделителя и делаем первую букву каждого слова заглавной
         return '; '.join([word[0] for word in keywords]).capitalize()
     else:
+        # Возвращаем сообщение, если строка 'sIn' пустая, равна None или содержит '...'
         return 'Необходимо заполнить поле субтитров'
 
 
