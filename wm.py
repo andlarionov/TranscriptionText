@@ -152,15 +152,21 @@ if __name__ == '__main__':
     with col2:
         st.button(button_name0, on_click=click_button0, key='00')
 
-
+    # Устанавливаем текстовую метку для вывода ключевых слов
     text_label2 = 'Ключевые слова'
+    # Устанавливаем название кнопки для получения ключевых слов
     button_name2 = 'Получить ключевые слова'
+    # Проверяем наличие 'result2' в состоянии сессии, если нет, устанавливаем значение по умолчанию '...'
     if 'result2' not in st.session_state:
         st.session_state['result2'] = '...'
+    # Отображаем текстовую область с 'result2' и меткой 'Ключевые слова'
     st.text_area(text_label2, st.session_state['result2'], key='2')
+    # Разбиваем экран на три колонки с соответствующими размерностями
     col1, col2, col3 = st.columns([4, 2.2, 0.6])
+    # Во второй колонке размещаем кнопку с названием 'button_name2', при нажатии на которую вызывается функция 'click_button2'
     with col2:
         st.button(button_name2, on_click=click_button2, key='22')
+    # В третьей колонке размещаем кнопку для скачивания данных из 'result2' в виде файла с расширением '.txt'
     with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
 
