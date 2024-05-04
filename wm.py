@@ -18,12 +18,13 @@ model = WhisperModel("small")
 
 
 def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
-    # Распознаём аудио-файл
-    if t_audio != "" and not (t_audio is None):
-        return GetTextFromVideoAudio(t_audio)
-    # Распознаём видео-файл
-    if t_video != "" and not (t_video is None):
-        return GetTextFromVideoAudio(t_video)
+    if subtitres_whisper == 'Распознать загруженное аудио/видео':
+        # Распознаём аудио-файл
+        if t_audio != "" and not (t_audio is None):
+            return GetTextFromVideoAudio(t_audio)
+        # Распознаём видео-файл
+        if t_video != "" and not (t_video is None):
+            return GetTextFromVideoAudio(t_video)
 
     # Извлекаем видео ID из URL
     if ('v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?') or ('shorts/' in sURL and sURL[:len('https://www.youtube.com/shorts/')] == 'https://www.youtube.com/shorts/'):
@@ -103,6 +104,7 @@ def GetTextFromVideoAudio(fileName):
         sText += segment.text
 
     return sText
+    
 
 if __name__ == '__main__':
 
@@ -117,17 +119,19 @@ if __name__ == '__main__':
 
     t_subtitres_whisper = st.radio(
             "Выберите способ получения текста из YouTube",
-            ["Использовать субтитры YouTube", "Распознать аудио с YouTube"], 
+            ["Использовать субтитры YouTube", "Распознать аудио с YouTube", "Распознать загруженное аудио/видео"], 
             on_change=st.session_state.clear)
 
     t_subtitres_lang = st.selectbox(
         'Язык субтитров',
         ('RU', 'EN')).lower()
+    
 
-
+    t_video = st.file_uploader("Выберете видео файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
+    t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
 
     def click_button0():
-        st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, "", "")
+        st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio)
 
 
     text_label0 = 'Субтитры из видео/аудио'
