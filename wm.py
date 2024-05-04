@@ -121,17 +121,13 @@ def process_summarize(sIn):
         return 'Необходимо заполнить поле субтитров'
 
 
-# Функция Keyword_1 принимает строку 'sIn' в качестве аргумента    
 def Keyword_1(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
-         # Создаем объект extractor класса KeywordExtractor с параметрами
         extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
-         # Извлекаем ключевые слова из строки 'sIn'
         keywords = extractor.extract_keywords(sIn)
-        # Объединяем ключевые слова с использованием ';' в качестве разделителя и делаем первую букву каждого слова заглавной
+        # Изменяем способ объединения ключевых слов, используя ';' в качестве разделителя
         return '; '.join([word[0] for word in keywords]).capitalize()
     else:
-        # Возвращаем сообщение, если строка 'sIn' пустая, равна None или содержит '...'
         return 'Необходимо заполнить поле субтитров'
 
 
@@ -180,20 +176,23 @@ if __name__ == '__main__':
             st.session_state['result1'] = process_summarize(st.session_state['result0'])
 
 
-    # Устанавливаем текстовую метку для вывода ключевых слов
+    text_label1 = 'Краткий отчет'
+    button_name1 = 'Получить краткий отчет'
+    if 'result1' not in st.session_state:
+        st.session_state['result1'] = '...'
+    st.text_area(text_label1, st.session_state['result1'], key='1')
+    col1, col2 = st.columns([4, 1])
+    with col2:
+        st.button(button_name1, on_click=click_button1, key='11')
+
     text_label2 = 'Ключевые слова'
-    # Устанавливаем название кнопки для получения ключевых слов
     button_name2 = 'Получить ключевые слова'
-    # Проверяем наличие 'result2' в состоянии сессии, если нет, устанавливаем значение по умолчанию '...'
     if 'result2' not in st.session_state:
         st.session_state['result2'] = '...'
-    # Отображаем текстовую область с 'result2' и меткой 'Ключевые слова'
     st.text_area(text_label2, st.session_state['result2'], key='2')
-    # Разбиваем экран на три колонки с соответствующими размерностями
     col1, col2, col3 = st.columns([4, 2.2, 0.6])
-    # Во второй колонке размещаем кнопку с названием 'button_name2', при нажатии на которую вызывается функция 'click_button2'
     with col2:
         st.button(button_name2, on_click=click_button2, key='22')
-    # В третьей колонке размещаем кнопку для скачивания данных из 'result2' в виде файла с расширением '.txt'
     with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
+
