@@ -121,13 +121,13 @@ def process_summarize(sIn):
         return 'Необходимо заполнить поле субтитров'
 
 
-def Keyword_1(sIn):
-    if sIn != "" and not (sIn is None) and sIn != "...":
-        extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
-        keywords = extractor.extract_keywords(sIn)
+def Keyword_1(sIn): # Функция Keyword_1 принимает строку 'sIn' в качестве аргумента
+    if sIn != "" and not (sIn is None) and sIn != "...": 
+        extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)  # Создаем объект extractor класса KeywordExtractor с параметрами
+        keywords = extractor.extract_keywords(sIn)  # Извлекаем ключевые слова из строки 'sIn'
         # Изменяем способ объединения ключевых слов, используя ';' в качестве разделителя
-        return '; '.join([word[0] for word in keywords]).capitalize()
-    else:
+        return '; '.join([word[0] for word in keywords]).capitalize()  # Объединяем ключевые слова с использованием ';' в качестве разделителя и делаем первую букву каждого слова заглавной
+    else: # Возвращаем сообщение, если строка 'sIn' пустая, равна None или содержит '...'
         return 'Необходимо заполнить поле субтитров'
 
 
