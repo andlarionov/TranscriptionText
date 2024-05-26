@@ -1,9 +1,10 @@
 import wm as wm5
-
+import pytest
+from unittest.mock import Mock
 
 def test_YTsubtitres():
     # Выдергиваем субтитры
-    subtitres_whisper = 'Субтитры'
+    subtitres_whisper = 'Использовать субтитры YouTube'
     sURL = 'https://www.youtube.com/watch?v=6EsCI3CbmTk'
     subtitres_lang = 'ru'
     t_video = ''
@@ -18,7 +19,7 @@ def test_YTsubtitres():
 
 def test_YTvideo():
     # распознаём аудио на ютюб
-    subtitres_whisper = 'Распознать аудио'
+    subtitres_whisper = 'Распознать аудио с YouTube'
     sURL = 'https://www.youtube.com/watch?v=6EsCI3CbmTk'
     subtitres_lang = 'ru'
     t_video = ''
@@ -33,7 +34,7 @@ def test_YTvideo():
 
 def test_audio():
     # распознаём аудио файл (в папке с проверяемым фалом д/б ещё файл Kati_k_kasse.mp3)
-    subtitres_whisper = 'Распознать аудио'
+    subtitres_whisper = 'Распознать аудио с YouTube'
     sURL = 'https://www.youtube.com/watch?v=6EsCI3CbmTk'
     subtitres_lang = 'ru'
     t_video = ''
@@ -60,21 +61,23 @@ def test_video():
 
     assert result[:len(sResult)] == sResult
 
+
 def test_process_summarize_valid(mocker):
     input_text = "Это пример текста. Это пример текста. Это пример текста. Это пример текста."
-    summarizer_mock = mocker.patch('your_module.LsaSummarizer')
+    summarizer_mock = mocker.patch('sumy.summarizers.lsa.LsaSummarizer')
     summarizer_instance = summarizer_mock.return_value
     summarizer_instance.__call__.return_value = ["Это пример текста."]
-    mocker.patch('your_module.PlaintextParser.from_string', return_value=Mock())
-
-    result = process_summarize(input_text)
+    mocker.patch('sumy.parsers.plaintext.PlaintextParser.from_string', return_value=Mock())
+    
+    result = wm5.process_summarize(input_text)
     assert "Это пример текста." in result
+
 
 def test_keyword_extraction_valid(mocker):
     input_text = "Это пример текста, который содержит ключевые слова."
-    extractor_mock = mocker.patch('your_module.KeywordExtractor')
+    extractor_mock = mocker.patch('yake.KeywordExtractor')
     extractor_instance = extractor_mock.return_value
     extractor_instance.extract_keywords.return_value = [('ключевые', 0.1), ('слова', 0.2)]
-
-    result = Keyword_1(input_text)
+    
+    result = wm5.Keyword_1(input_text)
     assert "Ключевые; Слова" in result
