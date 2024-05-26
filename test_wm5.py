@@ -1,4 +1,4 @@
-import wm6 as wm5
+import wm as wm5
 
 
 def test_YTsubtitres():
@@ -59,3 +59,22 @@ def test_video():
     sResult = 'Передаю слово Алексею Владимировичу Саватееву'
 
     assert result[:len(sResult)] == sResult
+
+def test_process_summarize_valid(mocker):
+    input_text = "Это пример текста. Это пример текста. Это пример текста. Это пример текста."
+    summarizer_mock = mocker.patch('your_module.LsaSummarizer')
+    summarizer_instance = summarizer_mock.return_value
+    summarizer_instance.__call__.return_value = ["Это пример текста."]
+    mocker.patch('your_module.PlaintextParser.from_string', return_value=Mock())
+
+    result = process_summarize(input_text)
+    assert "Это пример текста." in result
+
+def test_keyword_extraction_valid(mocker):
+    input_text = "Это пример текста, который содержит ключевые слова."
+    extractor_mock = mocker.patch('your_module.KeywordExtractor')
+    extractor_instance = extractor_mock.return_value
+    extractor_instance.extract_keywords.return_value = [('ключевые', 0.1), ('слова', 0.2)]
+
+    result = Keyword_1(input_text)
+    assert "Ключевые; Слова" in result
