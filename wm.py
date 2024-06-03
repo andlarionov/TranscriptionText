@@ -24,9 +24,9 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
     if subtitres_whisper == 'Распознать загруженное аудио/видео':
         # Распознаём аудио-файл
         if t_audio != "" and not (t_audio is None):
-            return GetTextFromVideoAudio(t_audio)   
-        elif t_video != "" and not (t_video is None):
-            # Распознаём видео-файл
+            return GetTextFromVideoAudio(t_audio)
+        # Распознаём видео-файл
+        if t_video != "" and not (t_video is None):
             return GetTextFromVideoAudio(t_video)
 
     # Извлекаем видео ID из URL
@@ -36,7 +36,8 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
         if subtitres_whisper == 'Использовать субтитры YouTube':
             # Извлекаем субтитры
             return GetSubtitres(subtitres_lang, yt)
-        elif subtitres_whisper == 'Распознать аудио с YouTube':
+
+        if subtitres_whisper == 'Распознать аудио с YouTube':
             # Анализ аудио
             return GetTextFromVideoYt(yt)
         
@@ -78,16 +79,6 @@ def GetSubtitres(first_language_code, yt):
     else:
         return "Указанный код языка не найден. Возможо выбрать указанные ниже языки:" + '\n' + sLang
 
-
-# Работа с аудио/видео на локальном диске
-def GetTextFromVideoAudio(fileName):
-    segments = model.transcribe(fileName)[0]
-    sText = ''
-    for segment in segments:
-        sText += segment.text
-
-    return sText
-
 # получаем аудио с Ютьюб
 def GetTextFromVideoYt(yt):
     try:
@@ -97,13 +88,26 @@ def GetTextFromVideoYt(yt):
     except:
         return "Не удалось получить аудио из видео." 
     audio_file = mp.AudioFileClip(fileName)
-    writeFileName = "vrem.wav"
-    audio_file.write_audiofile(writeFileName)
+    audio_file.write_audiofile("vrem.wav")
 
-    sText = GetTextFromVideoAudio(writeFileName)
+    segments, info = model.transcribe("vrem.wav")
+    sText = ''
+    for segment in segments:
+        sText += segment.text
     os.remove(fileName)
-    os.remove(writeFileName)
+    os.remove("vrem.wav")
+
     return sText
+
+# Работа с аудио/видео на локальном диске
+def GetTextFromVideoAudio(fileName):
+    segments, info = model.transcribe(fileName)
+    sText = ''
+    for segment in segments:
+        sText += segment.text
+
+    return sText
+
 
 def process_summarize(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
@@ -126,7 +130,6 @@ def Keyword_1(sIn):
     
 
 if __name__ == '__main__':
-
     st.header('Транскрибация и суммаризация')
     st.subheader('Приложение, которое позволяет получить краткий отчет из '
             'контента на YouTube или локальных файлов. :tv: :arrow_forward: :memo:')
