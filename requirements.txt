@@ -1,0 +1,8 @@
+streamlit
+moviepy
+faster-whisper
+pytube
+youtube_transcript_api
+sumy
+yake
+nltk
