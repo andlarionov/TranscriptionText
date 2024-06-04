@@ -9,7 +9,7 @@ from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.lsa import LsaSummarizer
 from yake import KeywordExtractor
-from functools import lru_cache
+
 
 import nltk
 nltk.download('punkt')
@@ -19,7 +19,7 @@ nltk.download('stopwords')
 model = WhisperModel("small")
 
 
-@lru_cache(maxsize=None)
+
 def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
     if subtitres_whisper == 'Распознать загруженное аудио/видео':
         # Распознаём аудио-файл
@@ -108,7 +108,7 @@ def GetTextFromVideoAudio(fileName):
 
     return sText
 
-@lru_cache(maxsize=None)
+
 def process_summarize(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
         summarizer = LsaSummarizer()
@@ -118,7 +118,7 @@ def process_summarize(sIn):
     else:
         return 'Необходимо заполнить поле субтитров'
 
-@lru_cache(maxsize=None)
+
 def Keyword_1(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
         extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
@@ -130,7 +130,6 @@ def Keyword_1(sIn):
     
 
 if __name__ == '__main__':
-
     st.header('Транскрибация и суммаризация')
     st.subheader('Приложение, которое позволяет получить краткий отчет из '
             'контента на YouTube или локальных файлов. :tv: :arrow_forward: :memo:')
@@ -154,7 +153,14 @@ if __name__ == '__main__':
     t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
 
     def click_button0():
+        if not t_sURL and not t_video and not t_audio:
+            st.session_state['result0'] = "Укажите ссылку на видео или загрузите видео/аудио файл"
+            return
+        if t_subtitres_whisper == 'Использовать субтитры YouTube' and not t_subtitres_lang:
+            st.session_state['result0'] = "Укажите язык субтитров"
+            return
         st.session_state['result0'] = process_video(t_subtitres_whisper, t_sURL, t_subtitres_lang, t_video, t_audio)
+
 
 
     text_label0 = 'Субтитры из видео/аудио'
@@ -162,37 +168,42 @@ if __name__ == '__main__':
     if 'result0' not in st.session_state:
         st.session_state['result0'] = '...'
     st.text_area(text_label0, st.session_state['result0'], key='0')
-    col1, col2, col3 = st.columns([4, 1.6, 0.6])
+    col1, col2, col3 = st.columns([4, 1.75, 0.6])
     with col2:
         st.button(button_name0, on_click=click_button0, key='00')
     with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result0'], mime="text/plain", key='000', file_name=f"{button_name0[9:].capitalize()}.txt")
 
     def click_button1():
-        if 'result0' in st.session_state:
-            st.session_state['result1'] = process_summarize(st.session_state['result0'])
+        if 'result0' not in st.session_state or st.session_state['result0'] == '' or st.session_state['result0'] == 'Укажите ссылку на видео или загрузите видео/аудио файл' or st.session_state['result0'] == 'Укажите язык субтитров':
+            st.session_state['result1'] = "Сначала получите субтитры из видео/аудио"
+            return
+        st.session_state['result1'] = process_summarize(st.session_state['result0'])
+    
 
     text_label1 = 'Краткий отчет'
     button_name1 = 'Получить краткий отчет'
     if 'result1' not in st.session_state:
         st.session_state['result1'] = '...'
     st.text_area(text_label1, st.session_state['result1'], key='1')
-    col1, col2, col3 = st.columns([4, 2.0, 0.6])
+    col1, col2, col3 = st.columns([4, 2.2, 0.6])
     with col2:
         st.button(button_name1, on_click=click_button1, key='11')
     with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result1'], mime="text/plain", key='111', file_name=f"{button_name1[9:].capitalize()}.txt")
 
     def click_button2():
-        if 'result0' in st.session_state:
-            st.session_state['result2'] =Keyword_1(st.session_state['result0'])
+        if 'result0' not in st.session_state or st.session_state['result0'] == '' or st.session_state['result0'] == 'Укажите ссылку на видео или загрузите видео/аудио файл' or st.session_state['result0'] == 'Укажите язык субтитров':
+            st.session_state['result2'] = "Сначала получите субтитры из видео/аудио"
+            return
+        st.session_state['result2'] = Keyword_1(st.session_state['result0'])
 
     text_label2 = 'Ключевые слова'
     button_name2 = 'Получить ключевые слова'
     if 'result2' not in st.session_state:
         st.session_state['result2'] = '...'
     st.text_area(text_label2, st.session_state['result2'], key='2')
-    col1, col2, col3 = st.columns([4, 2.2, 0.6])
+    col1, col2, col3 = st.columns([4, 2.35, 0.6])
     with col2:
         st.button(button_name2, on_click=click_button2, key='22')
     with col3:
