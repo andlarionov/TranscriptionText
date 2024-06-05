@@ -18,24 +18,20 @@ nltk.download('stopwords')
 # Загружаем модель Whisper
 model = WhisperModel("small")
 
-
-
 def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
     if subtitres_whisper == 'Распознать загруженное аудио/видео':
-        # Распознаём аудио-файл
-        if t_audio != "" and not (t_audio is None):
+        if t_audio != "" and not (t_audio is None): # Распознаём аудио-файл
             return GetTextFromVideoAudio(t_audio)   
         elif t_video != "" and not (t_video is None):
-            # Распознаём видео-файл
-            return GetTextFromVideoAudio(t_video)
-
+            return GetTextFromVideoAudio(t_video)   # Распознаём видео-файл
+    
     # Извлекаем видео ID из URL
-    if ('v=' in sURL and sURL[:len('https://www.youtube.com/watch?')] == 'https://www.youtube.com/watch?') or ('shorts/' in sURL and sURL[:len('https://www.youtube.com/shorts/')] == 'https://www.youtube.com/shorts/'):
+    if ('v=' in sURL and sURL[:30] == 'https://www.youtube.com/watch?') or ('shorts/' in sURL and sURL[:31] == 'https://www.youtube.com/shorts/'):
         # Получаем информацию о видео
         yt = YouTube(sURL)
         if subtitres_whisper == 'Использовать субтитры YouTube':
             # Извлекаем субтитры
-            return GetSubtitres(subtitres_lang, yt)
+            return GetSubtitles(subtitres_lang, yt)
         elif subtitres_whisper == 'Распознать аудио с YouTube':
             # Анализ аудио
             return GetTextFromVideoYt(yt)
@@ -43,40 +39,27 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
     return "Укажите параметры работы с видео материалом."
 
 # получаем субтитры с Ютьб
-def GetSubtitres(first_language_code, yt):
-
-    sLang = 'Базовые языки:' + '\n'
-    bFind = False
+def GetSubtitles(first_language_code, yt):
     try:
         transcript_list = YouTubeTranscriptApi.list_transcripts(yt.video_id)
-    except:
+    except Exception:
         return "Не удалось получить субтитры из видео. \nПопробуйте выбрать другие параметры работы с видео. \nНапример: Распознать аудио с YouTube"
 
-    for transcript in transcript_list:
-        sLang += '   - ' + transcript.language_code + ' - ' + transcript.language + '\n'
-        if transcript.language_code == first_language_code:
-            Text_sub = transcript.fetch()
-            bFind = True
-            break
-    sLang += '\n' + 'Переводы:' + '\n'
+    available_subtitles = {transcript.language_code: transcript for transcript in transcript_list}
+    translatable_subtitles = {transcript.language_code: transcript for transcript in transcript_list if transcript.is_translatable}
 
-    if not bFind:
-        for transcript in transcript_list:
-            if transcript.is_translatable is True:
-                sLang += '   - Базовый язык ' + transcript.language_code + ' - ' + transcript.language + '. Переводы:\n'
-                for tr_l in transcript.translation_languages:
-                    sLang += '      - ' + tr_l['language_code'] + ' - ' + tr_l['language'] + '\n'
-                    if tr_l['language_code'] == first_language_code:
-                        Text_sub = transcript.translate(first_language_code).fetch()
-                        bFind = True
-                        break
-    sText = ''
-    if bFind:
-        for s1 in Text_sub:
-            sText += s1['text'] + '\n'
-        return sText
+    subtitles_text = ''
+    languages_text = 'Базовые языки:\n' + '\n'.join(f'   - {code} - {transcript.language}' for code, transcript in available_subtitles.items())
+
+    if first_language_code in available_subtitles:
+        subtitles_text = '\n'.join(s1['text'] for s1 in available_subtitles[first_language_code].fetch())
+    elif first_language_code in {tr_l['language_code'] for tr_l in translatable_subtitles[first_language_code].translation_languages}:
+        subtitles_text = '\n'.join(s1['text'] for s1 in translatable_subtitles[first_language_code].translate(first_language_code).fetch())
     else:
-        return "Указанный код языка не найден. Возможо выбрать указанные ниже языки:" + '\n' + sLang
+        languages_text += '\nПереводы:\n' + '\n'.join(f'   - Базовый язык {transcript.language_code} - {transcript.language}. Переводы:\n' + '      - ' + '\n      - '.join(f'{tr_l["language_code"]} - {tr_l["language"]}' for tr_l in transcript.translation_languages) for transcript in translatable_subtitles.values())
+        return f"Указанный код языка не найден. Возможно выбрать указанные ниже языки:\n{languages_text}"
+
+    return subtitles_text
 
 
 # Работа с аудио/видео на локальном диске
@@ -205,3 +188,4 @@ if __name__ == '__main__':
         st.button(button_name2, on_click=click_button2, key='22')
     with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
+
