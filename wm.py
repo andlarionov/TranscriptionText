@@ -24,7 +24,7 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
     if subtitres_whisper == 'Распознать загруженное аудио/видео':
         # Распознаём аудио-файл
         if t_audio != "" and not (t_audio is None):
-            return GetTextFromVideoAudio(t_audio)
+            return GetTextFromVideoAudio(t_audio)   
         elif t_video != "" and not (t_video is None):
             # Распознаём видео-файл
             return GetTextFromVideoAudio(t_video)
@@ -36,11 +36,10 @@ def process_video(subtitres_whisper, sURL, subtitres_lang, t_video, t_audio):
         if subtitres_whisper == 'Использовать субтитры YouTube':
             # Извлекаем субтитры
             return GetSubtitres(subtitres_lang, yt)
-
-        if subtitres_whisper == 'Распознать аудио с YouTube':
+        elif subtitres_whisper == 'Распознать аудио с YouTube':
             # Анализ аудио
             return GetTextFromVideoYt(yt)
-
+        
     return "Укажите параметры работы с видео материалом."
 
 # получаем субтитры с Ютьб
@@ -79,6 +78,7 @@ def GetSubtitres(first_language_code, yt):
     else:
         return "Указанный код языка не найден. Возможо выбрать указанные ниже языки:" + '\n' + sLang
 
+
 # Работа с аудио/видео на локальном диске
 def GetTextFromVideoAudio(fileName):
     segments = model.transcribe(fileName)[0]
@@ -103,7 +103,6 @@ def GetTextFromVideoYt(yt):
     sText = GetTextFromVideoAudio(writeFileName)
     os.remove(fileName)
     os.remove(writeFileName)
-
     return sText
 
 def process_summarize(sIn):
@@ -115,6 +114,7 @@ def process_summarize(sIn):
     else:
         return 'Необходимо заполнить поле субтитров'
 
+
 def Keyword_1(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
         extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
@@ -123,7 +123,7 @@ def Keyword_1(sIn):
         return '; '.join([word[0] for word in keywords]).capitalize()
     else:
         return 'Необходимо заполнить поле субтитров'
-
+    
 
 if __name__ == '__main__':
 
@@ -144,7 +144,7 @@ if __name__ == '__main__':
     t_subtitres_lang = st.selectbox(
         'Язык субтитров',
         ('RU', 'EN')).lower()
-
+    
 
     t_video = st.file_uploader("Выберете видео файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
     t_audio = st.file_uploader("Выберете аудио файл для распознавания", accept_multiple_files=False, on_change=st.session_state.clear)
@@ -176,7 +176,7 @@ if __name__ == '__main__':
             st.session_state['result1'] = "Сначала получите субтитры из видео/аудио"
             return
         st.session_state['result1'] = process_summarize(st.session_state['result0'])
-
+    
 
     text_label1 = 'Краткий отчет'
     button_name1 = 'Получить краткий отчет'
@@ -205,5 +205,3 @@ if __name__ == '__main__':
         st.button(button_name2, on_click=click_button2, key='22')
     with col3:
         st.download_button(label=":inbox_tray:", data=st.session_state['result2'], mime="text/plain", key='222', file_name=f"{button_name2[9:].capitalize()}.txt")
-
-
