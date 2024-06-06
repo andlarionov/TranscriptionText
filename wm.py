@@ -154,8 +154,7 @@ def Keyword_1(sIn):
         return "Необходимо заполнить поле субтитров"
 
 
-if __name__ == "__main__":
-
+def main():
     st.header("Транскрибация и суммаризация")
     st.subheader(
         "Приложение, которое позволяет получить краткий отчет из "
@@ -284,3 +283,7 @@ if __name__ == "__main__":
             key="222",
             file_name=f"{button_name2[9:].capitalize()}.txt",
         )
+
+
+if __name__ == "__main__":
+    main()
