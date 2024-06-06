@@ -147,8 +147,8 @@ def Keyword_1(sIn):
     if sIn != "" and not (sIn is None) and sIn != "...":
         extractor = KeywordExtractor(lan="ru", n=1, top=10, features=None)
         keywords = extractor.extract_keywords(sIn)
-        ''' Изменяем способ объединения ключевых слов,
-            используя ';' в качестве разделителя'''
+        # Изменяем способ объединения ключевых слов,
+        # используя ';' в качестве разделителя
         return "; ".join([word[0] for word in keywords]).capitalize()
     else:
         return "Необходимо заполнить поле субтитров"
