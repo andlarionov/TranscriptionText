@@ -1,0 +1,10 @@
+План по улучшению качества кода:
+1.1. Добавить проверку if not t_sURL and not t_video and not t_audio: перед вызовом функции process_video
+1.2. Добавить проверка if t_subtitres_whisper == 'Использовать субтитры YouTube' and not t_subtitres_lang: перед вызовом функции process_video
+
+2.1. Сократить повторяющийся код с помощью функции GetTextFromVideoAudio
+2.2. Изменить соотношение колонок кнопок
+2.3. Удалить ненужную переменную info из функции GetTextFromVideoAudio
+
+3.1. Упростить способ извлечения видео ID из URL в функции process_video
+3.2 Переработать функцию GetSubtitles
